@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DP네컷</title>
+    <style>
+        @font-face {
+            font-family: "LeeSeoyun";
+            src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2202-2@1.0/LeeSeoyun.woff") format("woff");
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        body {
+            font-family: "LeeSeoyun";
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: transparent; /* 기존 배경 이미지 삭제 */
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .photo-frame {
+            width: 150px;
+            height: 150px;
+            background-color: white;
+            background-size: cover;
+            background-position: center; /* 이미지 중앙 정렬 */
+            background-repeat: no-repeat;
+            position: relative;
+            cursor: pointer;
+            border: 4px solid white;
+        }
+
+        .photo-frame.selected {
+            border-color: green;
+        }
+
+        .selected-photos {
+            margin-top: 20px;
+        }
+
+        #selected-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        #selected-container .photo-frame {
+            width: 120px;
+            height: 120px;
+        }
+
+        .footer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .f-title {
+            font-size: 25px;
+            font-weight: 900;
+            color: white;
+        }
+
+        .f-date {
+            font-size: 15px;
+            font-weight: 500;
+            color: white;
+        }
+
+        #webcam-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #webcam {
+            margin: 10px 0;
+            width: 500px;
+            height: 375px;
+            border: 5px solid white;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            border: none;
+            background-color: #ff8ea2;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover {
+            background-color: #ff5a6e;
+        }
+
+        #instruction {
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            display: none;
+        }
+
+        /* 배경에 사용되는 캔버스 스타일 */
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* 캔버스를 뒤로 보냄 */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div id="webcam-container">
+            <video id="webcam" autoplay playsinline></video>
+            <div>
+                <button onclick="capturePhoto()">Capture Photo</button>
+            </div>
+        </div>
+        <div class="photos">
+            <!-- 2행 5열 사진 프레임 -->
+            <div id="photo-grid" class="photo-grid">
+                <!-- 10개의 사진 프레임 생성 -->
+                <div id="image1" class="photo-frame"></div>
+                <div id="image2" class="photo-frame"></div>
+                <div id="image3" class="photo-frame"></div>
+                <div id="image4" class="photo-frame"></div>
+                <div id="image5" class="photo-frame"></div>
+                <div id="image6" class="photo-frame"></div>
+                <div id="image7" class="photo-frame"></div>
+                <div id="image8" class="photo-frame"></div>
+                <div id="image9" class="photo-frame"></div>
+                <div id="image10" class="photo-frame"></div>
+            </div>
+        </div>
+
+        <!-- 선택된 사진이 들어갈 컨테이너 -->
+        <div class="selected-photos">
+            <h3>Selected Photos</h3>
+            <div id="selected-container" class="photo-grid"></div>
+        </div>
+
+        <!-- 사진 선택 안내 메시지 -->
+        <p id="instruction">사진 고르기는 "낙장불입"입니다.</p>
+    </div>
+
+    <!-- GlowParticle를 위한 스크립트 추가 -->
+    <script type="module" src="app.js"></script>
+
+    <script>
+        let photoHistory = [];
+        let selectedPhotos = [];
+        let maxSelections = 4;
+        let maxPhotos = 10;
+
+        async function setupWebcam() {
+            const constraints = {
+                video: true,
+            };
+
+            const video = document.getElementById('webcam');
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            video.srcObject = stream;
+        }
+
+        function capturePhoto() {
+            if (photoHistory.length >= maxPhotos) {
+                alert("You have already taken 10 photos!");
+                return;
+            }
+
+            const video = document.getElementById('webcam');
+            const canvas = document.createElement('canvas');
+
+            // Set canvas size to match video stream size
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const dataUrl = canvas.toDataURL('image/png');
+
+            // Find the first empty frame
+            const emptyFrame = document.querySelector('.photo-frame:not([data-filled="true"])');
+            if (emptyFrame) {
+                emptyFrame.style.backgroundImage = `url(${dataUrl})`;
+                emptyFrame.setAttribute('data-filled', 'true');
+                photoHistory.push(emptyFrame.id);
+
+                // If 10 photos are taken, show the instruction and enable photo selection
+                if (photoHistory.length === maxPhotos) {
+                    document.getElementById('instruction').style.display = 'block'; // 사진을 고르라는 메시지 표시
+                    enablePhotoSelection();
+                }
+            }
+        }
+
+        function enablePhotoSelection() {
+            const photoFrames = document.querySelectorAll('.photo-frame');
+            photoFrames.forEach((frame, index) => {
+                frame.onclick = () => selectPhoto(index + 1);
+            });
+        }
+
+        function selectPhoto(number) {
+            const photoFrame = document.getElementById(`image${number}`);
+
+            if (selectedPhotos.length >= maxSelections && !selectedPhotos.includes(number)) {
+                alert(`You can only select ${maxSelections} photos.`);
+                return;
+            }
+
+            if (selectedPhotos.includes(number)) {
+                // 이미 선택된 사진을 선택 해제
+                selectedPhotos = selectedPhotos.filter((n) => n !== number);
+                photoFrame.classList.remove("selected");
+                removeFromSelectedContainer(number);
+            } else {
+                // 사진 선택
+                selectedPhotos.push(number);
+                photoFrame.classList.add("selected");
+                addToSelectedContainer(photoFrame.style.backgroundImage);
+            }
+        }
+
+        function addToSelectedContainer(image) {
+            const container = document.getElementById('selected-container');
+            const newPhoto = document.createElement('div');
+            newPhoto.classList.add('photo-frame');
+            newPhoto.style.backgroundImage = image;
+            container.appendChild(newPhoto);
+        }
+
+        function removeFromSelectedContainer(number) {
+            const container = document.getElementById('selected-container');
+            const selectedImages = Array.from(container.children);
+            selectedImages.forEach((photo, index) => {
+                if (index === selectedPhotos.indexOf(number)) {
+                    container.removeChild(photo);
+                }
+            });
+        }
+
+        // Initialize the webcam feed
+        setupWebcam();
+    </script>
+</body>
+
+</html>

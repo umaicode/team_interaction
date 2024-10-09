@@ -24,7 +24,7 @@
 
         .container {
             width: 390px;
-            background-color: #ff8ea2;
+            background-color: #6ea1d4; /*#ff8ea2;*/
             height: 100%;
         }
 
@@ -100,16 +100,9 @@
             width: 100%;
             height: 100%;
             z-index: -1;
-        }
-
-        #qr-code-container {
-            display: none;
-            text-align: center;
-            margin-top: 20px;
+            /* Places canvas behind all content */
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.0.0-rc.7/dist/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 
 <body>
@@ -148,17 +141,89 @@
             </div>
         </div>
         <div class="footer">
-            <p class="f-title">버릇 씌빠끗..</p>
-            <p class="f-date">NOVEMBER 01, 2024 ~ NOVEMBER 07, 2024</p>
+            <p class="f-title">Record</p>
+            <p class="f-date">NOVEMBER 01, 2024 ~ NOVEMBER 04, 2024</p>
         </div>
     </div>
 
-    <!-- QR 코드 및 버튼 영역 -->
-    <div id="qr-code-container">
-        <div id="qr-code"></div>
-        <button onclick="captureFrame()">QR 코드로 만들기</button>
-    </div>
+    <script type="module">
+        import { GlowParticle } from './glowparticle.js';
 
+        const COLORS = [
+            {r:98, g: 78, b: 136},
+            {r: 137, g: 103, b: 179},
+            {r: 203, g: 128, b: 171},
+            {r: 230, g: 217, b: 162}
+        ];
+
+        class App {
+            constructor() {
+                this.canvas = document.createElement('canvas');
+                document.body.appendChild(this.canvas);
+                this.ctx = this.canvas.getContext('2d');
+
+                this.pixelRatio = (window.devicePixelRatio > 1) ? 2 : 1;
+
+                this.totalParticles = 15;
+                this.particles = [];
+                this.maxRadius = 900;
+                this.minRadius = 400;
+
+                window.addEventListener('resize', this.resize.bind(this), false);
+                this.resize();
+
+                window.requestAnimationFrame(this.animate.bind(this));
+            }
+
+            resize() {
+                this.stageWidth = document.body.clientWidth;
+                this.stageHeight = document.body.clientHeight;
+
+                this.canvas.width = this.stageWidth * this.pixelRatio;
+                this.canvas.height = this.stageHeight * this.pixelRatio;
+                this.ctx.scale(this.pixelRatio, this.pixelRatio);
+
+                this.ctx.globalCompositeOperation = 'saturation';
+
+                this.createParticles();
+            }
+
+            createParticles() {
+                let curColor = 0;
+                this.particles = [];
+
+                for (let i = 0; i < this.totalParticles; i++) {
+                    const item = new GlowParticle(
+                        Math.random() * this.stageWidth,
+                        Math.random() * this.stageHeight,
+                        Math.random() * (this.maxRadius - this.minRadius) + this.minRadius,
+                        COLORS[curColor]
+                    );
+
+                    if (++curColor >= COLORS.length) {
+                        curColor = 0;
+                    }
+
+                    this.particles[i] = item;
+                }
+            }
+
+            animate() {
+                window.requestAnimationFrame(this.animate.bind(this));
+
+                this.ctx.clearRect(0, 0, this.stageWidth, this.stageHeight);
+
+                for (let i = 0; i < this.totalParticles; i++) {
+                    const item = this.particles[i];
+                    item.animate(this.ctx, this.stageWidth, this.stageHeight);
+                }
+            }
+        }
+
+        window.onload = () => {
+            new App();
+        };
+    </script>
     <script>
         let photoHistory = [];
 
@@ -187,11 +252,6 @@
                 emptyFrame.style.backgroundImage = `url(${dataUrl})`;
                 emptyFrame.setAttribute('data-filled', 'true');
                 photoHistory.push(emptyFrame.id);
-
-                // 사진이 4개 모두 채워지면 QR 코드 버튼 표시
-                if (photoHistory.length === 4) {
-                    document.getElementById('qr-code-container').style.display = 'block';
-                }
             } else {
                 alert("All frames are filled!");
             }
@@ -203,33 +263,9 @@
                 const lastFrame = document.getElementById(lastFrameId);
                 lastFrame.style.backgroundImage = '';
                 lastFrame.removeAttribute('data-filled');
-                document.getElementById('qr-code-container').style.display = 'none'; // 사진이 지워지면 QR 버튼 숨김
             } else {
                 alert("No photos to delete!");
             }
-        }
-
-        function captureFrame() {
-            const container = document.querySelector('.container');
-            html2canvas(container).then(canvas => {
-                const imgData = canvas.toDataURL('image/png');
-                uploadImageAndGenerateQRCode(imgData);
-            });
-        }
-
-        // 임시 이미지 업로드 및 QR 코드 생성 (실제 서비스 사용 시 이미지 업로드 구현 필요)
-        function uploadImageAndGenerateQRCode(imageData) {
-            // 이미지 업로드가 가능한 경우 여기에 추가 (예: 이미지 호스팅 API)
-            // 여기서는 임시로 이미지 URL을 사용한다고 가정
-            const tempImageURL = "https://example.com/uploaded_image.png";  // 실제 업로드 URL 필요
-
-            const qrCodeContainer = document.getElementById('qr-code');
-            qrCodeContainer.innerHTML = '';
-            new QRCode(qrCodeContainer, {
-                text: tempImageURL,
-                width: 128,
-                height: 128
-            });
         }
 
         function showText(number) {

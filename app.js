@@ -1,5 +1,5 @@
 import {GlowParticle} from './glowparticle.js';
-
+/*
 const COLORS = [
     {r: 45, g: 74, b: 227}, // blue
     {r: 250, g: 255, b: 89}, // yellow
@@ -7,7 +7,14 @@ const COLORS = [
     {r: 44, g: 209, b: 252}, // skyblue
     {r: 54, g: 233, b: 84} // green
 ];
+*/
 
+const COLORS = [
+    {r:98, g: 78, b: 136},
+    {r: 137, g: 103, b: 179},
+    {r: 203, g: 128, b: 171},
+    {r: 230, g: 217, b: 162}
+];
 class App {
     constructor() {
         this.canvas = document.createElement('canvas');
