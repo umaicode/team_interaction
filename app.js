@@ -1,3 +1,5 @@
+import {GlowParticle} from './glowparticle.js';
+
 const COLORS = [
     {r: 45, g: 74, b: 227}, // blue
     {r: 250, g: 255, b: 89}, // yellow
@@ -12,12 +14,12 @@ class App {
         document.body.appendChild(this.canvas);
         this.ctx = this.canvas.getContext('2d');
 
-        this.pixelRatio = window.devicePixelRatio > 1 ? 2 : 1;
+        this.pixelRatio = (window.devicePixelRatio > 1) ? 2 : 1;
 
-        this.totalParticles = 1;
+        this.totalParticles = 15;
         this.particles = [];
-        this.maxRadius = 90;
-        this.minRadius = 40;
+        this.maxRadius = 900;
+        this.minRadius = 400;
 
         window.addEventListener('resize', this.resize.bind(this), false);
         this.resize();
@@ -33,6 +35,8 @@ class App {
         this.canvas.height = this.stageHeight * this.pixelRatio;
         this.ctx.scale(this.pixelRatio, this.pixelRatio);
 
+        this.ctx.globalCompositeOperation = 'saturation';
+
         this.createParticles();
     }
 
@@ -41,7 +45,7 @@ class App {
         this.particles = [];
 
         for (let i = 0; i < this.totalParticles; i++) {
-            const item = new Particle(
+            const item = new GlowParticle(
                 Math.random() * this.stageWidth,
                 Math.random() * this.stageHeight,
                 Math.random() * (this.maxRadius - this.minRadius) + this.minRadius,
@@ -53,6 +57,17 @@ class App {
             }
 
             this.particles[i] = item;
+        }
+    }
+
+    animate() {
+        window.requestAnimationFrame(this.animate.bind(this));
+
+        this.ctx.clearRect(0, 0, this.stageWidth, this.stageHeight);
+
+        for (let i = 0; i < this.totalParticles; i++) {
+            const item = this.particles[i];
+            item.animate(this.ctx, this.stageWidth, this.stageHeight);
         }
     }
 }
