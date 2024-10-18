@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DP네컷 & 코딩네컷</title>
+    <style>
+        @font-face {
+            font-family: "LeeSeoyun";
+            src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2202-2@1.0/LeeSeoyun.woff") format("woff");
+            font-weight: normal;
+            font-style: normal;
+        }
+        body {
+            font-family: "LeeSeoyun";
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: transparent;
+            overflow: hidden;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .container .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .container .photo-frame {
+            width: 150px;
+            height: 150px;
+            background-color: white;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+            cursor: pointer;
+            border: 4px solid white;
+        }
+
+        .container .photo-frame.selected {
+            border-color: green;
+        }
+
+        .container .selected-photos {
+            margin-top: 20px;
+        }
+
+        #selected-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        #selected-container .photo-frame {
+            width: 120px;
+            height: 120px;
+        }
+
+        .footer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .f-title, .f-date {
+            font-size: 25px;
+            font-weight: 900;
+            color: white;
+        }
+        .f-date {
+            font-size: 15px;
+            font-weight: 500;
+        }
+        #webcam-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #webcam {
+            margin: 10px 0;
+            /* width: 500px;
+            height: 375px; */
+            width: 780px;
+            height: 400px;
+            border: 5px solid white;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            border: none;
+            background-color: #ff8ea2;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        button:hover {
+            background-color: #ff5a6e;
+        }
+        #instruction {
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            display: block;
+        }
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        .hidden {
+            display: none;
+        }
+
+        .container2 {
+            background-color: #ff9d73;
+            width: 390px;
+            height: 100%;
+        }
+
+        .container2.photos {
+            margin-top: 30px;;
+        }
+        
+        .container2 .photo-frame {
+            background-color: white;
+            margin: 15px 20px;
+            height: 200px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            position: relative;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="webcam-container">
+            <video id="webcam" autoplay playsinline></video>
+            <div>
+                <button onclick="capturePhoto()">Capture Photo</button>
+            </div>
+        </div>
+        <div class="photos">
+            <div id="photo-grid" class="photo-grid">
+                <!-- Photos will be added dynamically -->
+            </div>
+        </div>
+        <div class="selected-photos">
+            <h3>Selected Photos</h3>
+            <div id="selected-container">
+                <!-- Selected photos will be added here -->
+            </div>
+        </div>
+        <p id="instruction">Please select up to 4 photos.</p>
+        <button onclick="saveAsImage()">Save Selected Photos</button>
+    </div>
+
+    <div class="container2 hidden">
+        <div class="photos">
+            <!-- Selected photos will be shown here -->
+        </div>
+        <div class="footer">
+            <p class="f-title">Happy Lunch Time</p>
+            <p class="f-date">2023.01.25</p>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+
+    <script>
+        let photoHistory = [];
+        let selectedPhotos = [];
+        let maxSelections = 4;
+        let maxPhotos = 10;
+
+        async function setupWebcam() {
+            const constraints = { video: true };
+            const video = document.getElementById('webcam');
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            video.srcObject = stream;
+        }
+
+        // 페이지 로드 시 10개의 빈 프레임을 생성
+        document.addEventListener('DOMContentLoaded', function() {
+            const photoGrid = document.getElementById('photo-grid');
+            for (let i = 1; i <= 10; i++) {
+                let frame = document.createElement('div');
+                frame.id = 'image' + i;
+                frame.className = 'photo-frame';
+                photoGrid.appendChild(frame);
+            }
+        });
+
+        function capturePhoto() {
+            const photoCount = photoHistory.length;
+            if (photoCount >= maxPhotos) {
+                alert("Maximum photo limit reached!");
+                return;
+            }
+            const video = document.getElementById('webcam');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/png');
+            const photoFrame = document.getElementById(`image${photoCount + 1}`);
+            photoFrame.style.backgroundImage = `url(${dataUrl})`;
+            photoFrame.setAttribute('data-filled', 'true');
+            photoFrame.onclick = () => selectPhoto(photoFrame.id); // Ensure the event listener is correctly assigned
+            photoHistory.push(photoFrame.id);
+
+            if (photoHistory.length === maxPhotos) {
+                document.getElementById('instruction').style.display = 'block';
+            }
+        }
+
+        function selectPhoto(photoId) {
+            const photoFrame = document.getElementById(photoId);
+            if (photoFrame.classList.contains('selected')) {
+                photoFrame.classList.remove('selected');
+                selectedPhotos = selectedPhotos.filter(id => id !== photoId);
+            } else {
+                if (selectedPhotos.length >= maxSelections) {
+                    alert(`You can only select ${maxSelections} photos.`);
+                    return;
+                }
+                photoFrame.classList.add('selected');
+                selectedPhotos.push(photoId);
+            }
+        }
+
+
+        function saveAsImage() {
+            if (selectedPhotos.length === 0) {
+                alert("Please select at least one photo.");
+                return;
+            }
+
+            const secondPageContainer = document.querySelector('.container2 .photos');
+            selectedPhotos.forEach(photoId => {
+                const photoFrame = document.getElementById(photoId);
+                const newPhoto = photoFrame.cloneNode();
+                newPhoto.className = 'photo-frame';
+                newPhoto.style.height = '200px';
+                secondPageContainer.appendChild(newPhoto);
+            });
+
+            document.querySelector('.container').classList.add('hidden');
+            document.querySelector('.container2').classList.remove('hidden');
+        }
+
+        setupWebcam();
+    </script>
+</body>
+</html>
