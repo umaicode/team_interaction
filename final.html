@@ -29,6 +29,11 @@
             background-color: transparent;
             overflow: hidden;
         }
+        .filter-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
         .container {
             display: flex;
             flex-direction: column;
@@ -175,6 +180,8 @@
             margin-top: 20px;
         }
         .filter-btn {
+            width: 120px;  /* 고정된 너비 */
+            height: 50px;  /* 고정된 높이 */
             padding: 10px 20px;
             margin: 0 10px;
             font-size: 16px;
@@ -183,7 +190,12 @@
             color: black;
             border-radius: 5px;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
         }
+
         .filter-btn:hover {
             background-color: #e0e0e0;
         }
@@ -220,14 +232,20 @@
             <p class="f-title">Record</p>
             <p class="f-date">01 NOV 2024 ~ 04 NOV 2024</p>
         </div>
+    </div>
+    <div class="filter-container hidden">
         <div class="filter-buttons">
             <button id="filter-none" class="filter-btn">일반</button>
             <button id="filter-mono" class="filter-btn">모노</button>
             <button id="filter-sepia" class="filter-btn">세피아</button>
+            <button onclick="saveAsPng()" class="filter-btn">이미지로 저장</button>
         </div>
     </div>
 
     <script type="module" src="app.js"></script>
+
+    <!-- html-to-image 라이브러리를 사용하기 위한 스크립트 -->
+    <script src="https://unpkg.com/html-to-image"></script>
 
     <script>
         let photoHistory = [];
@@ -318,6 +336,7 @@
             });
             document.querySelector('.container').classList.add('hidden');
             document.querySelector('.container2').classList.remove('hidden');
+            document.querySelector('.filter-container').classList.remove('hidden');
         }
 
         document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -341,6 +360,26 @@
                         break;
                 }
             });
+        }
+
+        function saveAsPng() {
+            const element = document.querySelector('.container2');
+            element.style.paddingTop = '5px';
+            if (element.classList.contains('hidden')) {
+                alert('Please select photos first.');
+                return;
+            }
+
+            htmlToImage.toPng(element)
+                .then(function (dataUrl) {
+                    const link = document.createElement('a');
+                    link.download = 'record.png';
+                    link.href = dataUrl;
+                    link.click();
+                })
+                .catch(function (error) {
+                    console.error('oops, something went wrong!', error);
+                });
         }
 
         setupWebcam();

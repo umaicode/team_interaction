@@ -12,6 +12,12 @@
             font-weight: normal;
             font-style: normal;
         }
+        @font-face {
+            font-family: 'Diphylleia-Regular';
+            src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_JAMO@1.0/Diphylleia-Regular.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+        }
         body {
             font-family: "LeeSeoyun";
             margin: 0;
@@ -78,6 +84,7 @@
         }
 
         .f-title, .f-date {
+            font-family: "Diphylleia-Regular";
             font-size: 25px;
             font-weight: 900;
             color: white;
@@ -135,13 +142,13 @@
         }
 
         .container2 {
-            background-color: #ff9d73;
+            background-color: black;
             width: 390px;
-            height: 100%;
+            height: auto;
         }
 
         .container2.photos {
-            margin-top: 30px;;
+            margin-top: 30px;
         }
         
         .container2 .photo-frame {
@@ -169,13 +176,13 @@
             </div>
         </div>
         <div class="selected-photos">
-            <h3>Selected Photos</h3>
+            <h3>사진 선택</h3>
             <div id="selected-container">
                 <!-- Selected photos will be added here -->
             </div>
         </div>
-        <p id="instruction">Please select up to 4 photos.</p>
-        <button onclick="saveAsImage()">Save Selected Photos</button>
+        <p id="instruction">사진고르기는 "낙장불입"입니다.</p>
+        <button onclick="saveAsImage()">선택한 사진을 이미지로 저장하기</button>
     </div>
 
     <div class="container2 hidden">
@@ -183,8 +190,8 @@
             <!-- Selected photos will be shown here -->
         </div>
         <div class="footer">
-            <p class="f-title">Happy Lunch Time</p>
-            <p class="f-date">2023.01.25</p>
+            <p class="f-title">Record</p>
+            <p class="f-date">01 NOV 2024 ~ 04 NOV 2024</p>
         </div>
     </div>
 
@@ -196,12 +203,12 @@
         let maxSelections = 4;
         let maxPhotos = 10;
 
-        async function setupWebcam() {
-            const constraints = { video: true };
-            const video = document.getElementById('webcam');
-            const stream = await navigator.mediaDevices.getUserMedia(constraints);
-            video.srcObject = stream;
-        }
+        // async function setupWebcam() {
+        //     const constraints = { video: true };
+        //     const video = document.getElementById('webcam');
+        //     const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        //     video.srcObject = stream;
+        // }
 
         // 페이지 로드 시 10개의 빈 프레임을 생성
         document.addEventListener('DOMContentLoaded', function() {
@@ -213,6 +220,32 @@
                 photoGrid.appendChild(frame);
             }
         });
+
+        async function setupWebcam() {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
+    
+            // 외부 웹캠이 있는 경우 해당 장치 사용, 없으면 기본 카메라 사용
+            const webcamDevice = videoDevices.find(device => device.label.toLowerCase().includes('webcam')) || videoDevices[0];
+
+            const constraints = { 
+                video: { 
+                    aspectRatio: 2 / 1.143 // 원하는 비율을 적용
+                }
+            };
+            const video = document.getElementById('webcam');
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            video.srcObject = stream;
+            
+            // 스트림이 로드되면 자동으로 비율에 맞게 크기 설정
+            video.addEventListener('loadedmetadata', () => {
+                const videoWidth = video.videoWidth;
+                const videoHeight = video.videoHeight;
+                video.style.width = `${videoWidth}px`;
+                video.style.height = `${videoHeight}px`;
+            });
+        }
+
 
         function capturePhoto() {
             const photoCount = photoHistory.length;
