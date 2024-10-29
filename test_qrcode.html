@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DP네컷</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DP네컷 & 코딩네컷</title>
     <style>
         @font-face {
             font-family: "LeeSeoyun";
@@ -13,7 +12,12 @@
             font-weight: normal;
             font-style: normal;
         }
-
+        @font-face {
+            font-family: 'Diphylleia-Regular';
+            src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_JAMO@1.0/Diphylleia-Regular.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+        }
         body {
             font-family: "LeeSeoyun";
             margin: 0;
@@ -22,92 +26,83 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
-            background-image: url("./background.png");
-            background-size: cover;
+            background-color: transparent;
+            overflow: hidden;
         }
-
+        .filter-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
         .container {
             display: flex;
             flex-direction: column;
             align-items: center;
             width: 100%;
-            max-width: 1200px;
-            background-color: #6ea1d4;
+            max-width: 1500px;
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
         }
-
-        .photo-grid {
+        .container .photo-grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 10px;
             margin: 20px 0;
         }
-
-        .photo-frame {
-            width: 150px;
-            height: 150px;
+        .container .photo-frame {
+            width: 350px;
+            height: 200px;
             background-color: white;
             background-size: cover;
-            background-position: center; /* 이미지 중앙 정렬 */
+            background-position: center;
             background-repeat: no-repeat;
             position: relative;
             cursor: pointer;
             border: 4px solid white;
         }
-
-        .photo-frame.selected {
+        .container .photo-frame.selected {
             border-color: green;
         }
-
-        .selected-photos {
+        .container .selected-photos {
             margin-top: 20px;
         }
-
         #selected-container {
             display: flex;
             gap: 10px;
         }
-
         #selected-container .photo-frame {
             width: 120px;
             height: 120px;
         }
-
         .footer {
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-
-        .f-title {
+        .f-title, .f-date {
+            font-family: "Diphylleia-Regular";
             font-size: 25px;
             font-weight: 900;
             color: white;
         }
-
         .f-date {
             font-size: 15px;
             font-weight: 500;
-            color: white;
         }
-
         #webcam-container {
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-
         #webcam {
             margin: 10px 0;
-            width: 500px;
-            height: 375px;
+            width: 780px;
+            height: 400px;
             border: 5px solid white;
             border-radius: 10px;
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
         }
-
         button {
             padding: 10px 20px;
             margin: 10px;
@@ -119,21 +114,93 @@
             cursor: pointer;
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
         }
-
         button:hover {
             background-color: #ff5a6e;
         }
-
         #instruction {
             margin-top: 20px;
             font-size: 20px;
             font-weight: bold;
             color: white;
+            display: block;
+        }
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        .hidden {
             display: none;
+        }
+        .container2 {
+            background-color: black;
+            width: 390px;
+            height: auto;
+        }
+        .container2 .photo-frame {
+            background-color: white;
+            margin: 15px 20px;
+            height: 200px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            position: relative;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5); /* 어두운 그림자 */
+            filter: sepia(0.6); /* 세피아 필터 */
+            overflow: hidden; /* 가장자리 효과를 위해 */
+        }
+        .container2 .photo-frame::before {
+            content: "";
+            position:absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 200, 0.4), rgba(255, 200, 150, 0.2), rgba(0, 0, 0, 0));
+            pointer-events: none;
+            z-index: 1;
+        }
+        .container2 .photo-frame::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 2;
+            box-shadow: inset 0 0 10px 5px rgba(0, 0, 0, 0.3); /* 가장자리 흐림 효과 */
+        }
+        .filter-buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .filter-btn {
+            width: 120px;  /* 고정된 너비 */
+            height: 50px;  /* 고정된 높이 */
+            padding: 10px 20px;
+            margin: 0 10px;
+            font-size: 16px;
+            border: none;
+            background-color: #f0f0f0;
+            color: black;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .filter-btn:hover {
+            background-color: #e0e0e0;
         }
     </style>
 </head>
-
 <body>
     <div class="container">
         <div id="webcam-container">
@@ -143,130 +210,226 @@
             </div>
         </div>
         <div class="photos">
-            <!-- 2행 5열 사진 프레임 -->
             <div id="photo-grid" class="photo-grid">
-                <!-- 10개의 사진 프레임 생성 -->
-                <div id="image1" class="photo-frame"></div>
-                <div id="image2" class="photo-frame"></div>
-                <div id="image3" class="photo-frame"></div>
-                <div id="image4" class="photo-frame"></div>
-                <div id="image5" class="photo-frame"></div>
-                <div id="image6" class="photo-frame"></div>
-                <div id="image7" class="photo-frame"></div>
-                <div id="image8" class="photo-frame"></div>
-                <div id="image9" class="photo-frame"></div>
-                <div id="image10" class="photo-frame"></div>
+                <!-- Photos will be added dynamically -->
             </div>
         </div>
-
-        <!-- 선택된 사진이 들어갈 컨테이너 -->
         <div class="selected-photos">
-            <h3>Selected Photos</h3>
-            <div id="selected-container" class="photo-grid"></div>
+            <h3>사진 선택</h3>
+            <div id="selected-container">
+                <!-- Selected photos will be added here -->
+            </div>
+        </div>
+        <p id="instruction">사진고르기는 "낙장불입"입니다.</p>
+        <button onclick="saveAsImage()">선택한 사진을 이미지로 저장하기</button>
+    </div>
+
+    <div class="container2 hidden">
+        <div class="photos">
+            <!-- Selected photos will be shown here -->
+        </div>
+        <div class="footer">
+            <p class="f-title">Record</p>
+            <p class="f-date">01 NOV 2024 ~ 04 NOV 2024</p>
+        </div>
+    </div>
+    <div class="filter-container hidden">
+        <div class="filter-buttons">
+            <button id="filter-none" class="filter-btn">일반</button>
+            <button id="filter-mono" class="filter-btn">모노</button>
+            <button id="filter-sepia" class="filter-btn">세피아</button>
+            <button onclick="saveAsPng()" class="filter-btn">이미지로 저장</button>
         </div>
 
-        <!-- 사진 선택 안내 메시지 -->
-        <p id="instruction">사진 고르기는 "낙장불입"입니다.</p>
+        <div id="qr-code-container" style = "margin-left: 20px;"></div>
     </div>
+
+    <!-- html-to-image 라이브러리를 사용하기 위한 스크립트 -->
+    <script src="https://unpkg.com/html-to-image"></script>
+    <!-- qr-code-styling 라이브러리 추가 -->
+    <script src="https://unpkg.com/qr-code-styling/lib/qr-code-styling.js"></script>
+    
+    <script type="module" src="app.js"></script>
+
 
     <script>
         let photoHistory = [];
         let selectedPhotos = [];
         let maxSelections = 4;
-        let maxPhotos = 10;
+        let maxPhotos = 8;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const photoGrid = document.getElementById('photo-grid');
+            for (let i = 1; i <= 8; i++) {
+                let frame = document.createElement('div');
+                frame.id = 'image' + i;
+                frame.className = 'photo-frame';
+                photoGrid.appendChild(frame);
+            }
+        });
 
         async function setupWebcam() {
-            const constraints = {
-                video: true,
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
+            const webcamDevice = videoDevices.find(device => device.label.toLowerCase().includes('webcam')) || videoDevices[0];
+            const constraints = { 
+                video: { 
+                    aspectRatio: 2 / 1.143
+                }
             };
-
             const video = document.getElementById('webcam');
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
             video.srcObject = stream;
+            video.addEventListener('loadedmetadata', () => {
+                const videoWidth = video.videoWidth;
+                const videoHeight = video.videoHeight;
+                video.style.width = `${videoWidth}px`;
+                video.style.height = `${videoHeight}px`;
+            });
         }
 
         function capturePhoto() {
-            if (photoHistory.length >= maxPhotos) {
-                alert("You have already taken 10 photos!");
+            const photoCount = photoHistory.length;
+            if (photoCount >= maxPhotos) {
+                alert("Maximum photo limit reached!");
                 return;
             }
-
             const video = document.getElementById('webcam');
             const canvas = document.createElement('canvas');
-
-            // Set canvas size to match video stream size
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-
             const context = canvas.getContext('2d');
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
             const dataUrl = canvas.toDataURL('image/png');
-
-            // Find the first empty frame
-            const emptyFrame = document.querySelector('.photo-frame:not([data-filled="true"])');
-            if (emptyFrame) {
-                emptyFrame.style.backgroundImage = `url(${dataUrl})`;
-                emptyFrame.setAttribute('data-filled', 'true');
-                photoHistory.push(emptyFrame.id);
-
-                // If 10 photos are taken, show the instruction and enable photo selection
-                if (photoHistory.length === maxPhotos) {
-                    document.getElementById('instruction').style.display = 'block'; // 사진을 고르라는 메시지 표시
-                    enablePhotoSelection();
-                }
+            const photoFrame = document.getElementById(`image${photoCount + 1}`);
+            photoFrame.style.backgroundImage = `url(${dataUrl})`;
+            photoFrame.setAttribute('data-filled', 'true');
+            photoFrame.onclick = () => selectPhoto(photoFrame.id);
+            photoHistory.push(photoFrame.id);
+            if (photoHistory.length === maxPhotos) {
+                document.getElementById('instruction').style.display = 'block';
             }
         }
 
-        function enablePhotoSelection() {
-            const photoFrames = document.querySelectorAll('.photo-frame');
-            photoFrames.forEach((frame, index) => {
-                frame.onclick = () => selectPhoto(index + 1);
+        function selectPhoto(photoId) {
+            const photoFrame = document.getElementById(photoId);
+            if (photoFrame.classList.contains('selected')) {
+                photoFrame.classList.remove('selected');
+                selectedPhotos = selectedPhotos.filter(id => id !== photoId);
+            } else {
+                if (selectedPhotos.length >= maxSelections) {
+                    alert(`You can only select ${maxSelections} photos.`);
+                    return;
+                }
+                photoFrame.classList.add('selected');
+                selectedPhotos.push(photoId);
+            }
+        }
+
+        function saveAsImage() {
+            if (selectedPhotos.length === 0) {
+                alert("Please select at least one photo.");
+                return;
+            }
+            const secondPageContainer = document.querySelector('.container2 .photos');
+            selectedPhotos.forEach(photoId => {
+                const photoFrame = document.getElementById(photoId);
+                const newPhoto = photoFrame.cloneNode();
+                newPhoto.className = 'photo-frame';
+                newPhoto.style.height = '200px';
+                secondPageContainer.appendChild(newPhoto);
+            });
+            document.querySelector('.container').classList.add('hidden');
+            document.querySelector('.container2').classList.remove('hidden');
+            document.querySelector('.filter-container').classList.remove('hidden');
+        }
+
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                applyFilter(this.id);
+            });
+        });
+
+        function applyFilter(filterType) {
+            const photos = document.querySelectorAll('.container2 .photo-frame');
+            photos.forEach(photo => {
+                switch (filterType) {
+                    case 'filter-none':
+                        photo.style.filter = 'none';
+                        break;
+                    case 'filter-mono':
+                        photo.style.filter = 'grayscale(100%)';
+                        break;
+                    case 'filter-sepia':
+                        photo.style.filter = 'sepia(100%)';
+                        break;
+                }
             });
         }
 
-        function selectPhoto(number) {
-            const photoFrame = document.getElementById(`image${number}`);
+        
 
-            if (selectedPhotos.length >= maxSelections && !selectedPhotos.includes(number)) {
-                alert(`You can only select ${maxSelections} photos.`);
+        function saveAsPng() {
+            const element = document.querySelector('.container2');
+            element.style.paddingTop = '5px';
+            if (element.classList.contains('hidden')) {
+                alert('Please select photos first.');
                 return;
             }
 
-            if (selectedPhotos.includes(number)) {
-                // 이미 선택된 사진을 선택 해제
-                selectedPhotos = selectedPhotos.filter((n) => n !== number);
-                photoFrame.classList.remove("selected");
-                removeFromSelectedContainer(number);
-            } else {
-                // 사진 선택
-                selectedPhotos.push(number);
-                photoFrame.classList.add("selected");
-                addToSelectedContainer(photoFrame.style.backgroundImage);
-            }
+            htmlToImage.toPng(element)
+                .then(function (dataUrl) {
+                    console.log("Generated Image Data URL:", dataUrl); // Base64 데이터 확인
+                    const link = document.createElement('a');
+                    link.download = 'record.png';  // 이미지 파일 다운로드
+                    link.href = dataUrl;
+                    link.click();
+
+                    // QR code 생성
+                    generateQRCode(dataUrl);  // Base64 데이터를 바로 QR 코드로 사용
+                })
+                .catch(function (error) {
+                    console.error('Image generation failed:', error);
+                });
         }
 
-        function addToSelectedContainer(image) {
-            const container = document.getElementById('selected-container');
-            const newPhoto = document.createElement('div');
-            newPhoto.classList.add('photo-frame');
-            newPhoto.style.backgroundImage = image;
-            container.appendChild(newPhoto);
-        }
 
-        function removeFromSelectedContainer(number) {
-            const container = document.getElementById('selected-container');
-            const selectedImages = Array.from(container.children);
-            selectedImages.forEach((photo, index) => {
-                if (index === selectedPhotos.indexOf(number)) {
-                    container.removeChild(photo);
+        function generateQRCode(imageURL) {
+            console.log("QR 코드에 사용할 이미지 데이터:", imageURL); // 이미지 데이터 출력
+
+            const qrCode = new QRCodeStyling({
+                width: 150, // QR 코드 크기 설정
+                height: 150,
+                data: imageURL,  // Base64 데이터를 QR 코드로 변환
+                dotsOptions: {
+                    color: "#000000",
+                    type: "rounded"
+                },
+                backgroundOptions: {
+                    color: "#ffffff",
                 }
             });
+
+            const qrCodeContainer = document.getElementById('qr-code-container');
+            
+            if (!qrCodeContainer) {
+                console.error("QR 코드 컨테이너를 찾을 수 없습니다.");
+                return;
+            }
+
+            // 기존 QR 코드 제거
+            qrCodeContainer.innerHTML = ''; 
+
+            // QR 코드 삽입
+            qrCode.append(qrCodeContainer);
+
+            console.log("QR 코드가 성공적으로 생성되었습니다.");
         }
 
-        // Initialize the webcam feed
+
+
+
         setupWebcam();
     </script>
 </body>
-
 </html>
