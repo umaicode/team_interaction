@@ -96,6 +96,7 @@
             align-items: center;
         }
         #webcam {
+            transform: scaleX(-1);
             margin: 10px 0;
             width: 780px;
             height: 400px;
@@ -312,7 +313,13 @@
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const context = canvas.getContext('2d');
+            
+            // 좌우 반전 적용
+            context.translate(canvas.width, 0);
+            context.scale(-1, 1);
+
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
             const dataUrl = canvas.toDataURL('image/png');
             const photoFrame = document.getElementById(`image${photoCount + 1}`);
             photoFrame.style.backgroundImage = `url(${dataUrl})`;
