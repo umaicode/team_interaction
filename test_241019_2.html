@@ -29,25 +29,30 @@
             background-color: transparent;
             overflow: hidden;
         }
+        .filter-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
         .container {
             display: flex;
             flex-direction: column;
             align-items: center;
             width: 100%;
-            max-width: 1200px;
+            max-width: 1500px;
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
         }
         .container .photo-grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 10px;
             margin: 20px 0;
         }
         .container .photo-frame {
-            width: 150px;
-            height: 150px;
+            width: 350px;
+            height: 200px;
             background-color: white;
             background-size: cover;
             background-position: center;
@@ -131,7 +136,7 @@
             display: none;
         }
         .container2 {
-            background-color: black;
+            background-color: #FFBE98;
             width: 390px;
             height: auto;
         }
@@ -143,7 +148,7 @@
             background-repeat: no-repeat;
             position: relative;
             cursor: pointer;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5); /* 어두운 그림자 */
+            /*box-shadow: 0 0 20px rgba(0, 0, 0, 0.5); /* 어두운 그림자 */
             filter: sepia(0.6); /* 세피아 필터 */
             overflow: hidden; /* 가장자리 효과를 위해 */
         }
@@ -154,7 +159,7 @@
             right: 0;
             bottom: 0;
             left: 0;
-            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 200, 0.4), rgba(255, 200, 150, 0.2), rgba(0, 0, 0, 0));
+            /* background: radial-gradient(circle at 30% 30%, rgba(255, 255, 200, 0.4), rgba(255, 200, 150, 0.2), rgba(0, 0, 0, 0)); */
             pointer-events: none;
             z-index: 1;
         }
@@ -167,7 +172,7 @@
             left: 0;
             pointer-events: none;
             z-index: 2;
-            box-shadow: inset 0 0 10px 5px rgba(0, 0, 0, 0.3); /* 가장자리 흐림 효과 */
+            /* box-shadow: inset 0 0 10px 5px rgba(0, 0, 0, 0.3); 가장자리 흐림 효과 */
         }
         .filter-buttons {
             display: flex;
@@ -175,6 +180,8 @@
             margin-top: 20px;
         }
         .filter-btn {
+            width: 120px;  /* 고정된 너비 */
+            height: 50px;  /* 고정된 높이 */
             padding: 10px 20px;
             margin: 0 10px;
             font-size: 16px;
@@ -183,16 +190,31 @@
             color: black;
             border-radius: 5px;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
         }
+
         .filter-btn:hover {
             background-color: #e0e0e0;
+        }
+
+        #qr-code-container {
+            width: 100px;
+            height: 100px;
+            overflow: hidden;
+            display: inline-block;
+            margin-left: 10px;
+            position: relative;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div id="webcam-container">
+        <div id="webcam-container" style = "position: relative;">
             <video id="webcam" autoplay playsinline></video>
+            <div id="countdown" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 50px; color: white; display: none;"></div>
             <div>
                 <button onclick="capturePhoto()">Capture Photo</button>
             </div>
@@ -220,24 +242,38 @@
             <p class="f-title">Record</p>
             <p class="f-date">01 NOV 2024 ~ 04 NOV 2024</p>
         </div>
+    </div>
+    <div class="filter-container hidden">
         <div class="filter-buttons">
             <button id="filter-none" class="filter-btn">일반</button>
             <button id="filter-mono" class="filter-btn">모노</button>
             <button id="filter-sepia" class="filter-btn">세피아</button>
+            <button id="filter-fuji" class="filter-btn">Fuji</button>
+            <button onclick="saveAsPng()" class="filter-btn">이미지로 저장</button>
+            <div id="qr-code-container" style="width: 100px; height: 100px; margin-left: 20px;"></div>
         </div>
     </div>
 
+    <!-- html-to-image 라이브러리를 사용하기 위한 스크립트 -->
+    <script src="https://unpkg.com/html-to-image"></script>
+    <!-- qr-code-styling 라이브러리 추가 -->
+    <script src="https://unpkg.com/qr-code-styling/lib/qr-code-styling.js"></script>
+    
     <script type="module" src="app.js"></script>
+
 
     <script>
         let photoHistory = [];
         let selectedPhotos = [];
         let maxSelections = 4;
-        let maxPhotos = 10;
+        let maxPhotos = 8;
+        let photoTimer;
+        let photoCount = 0;
+        let countdownTimer;
 
         document.addEventListener('DOMContentLoaded', function() {
             const photoGrid = document.getElementById('photo-grid');
-            for (let i = 1; i <= 10; i++) {
+            for (let i = 1; i <= 8; i++) {
                 let frame = document.createElement('div');
                 frame.id = 'image' + i;
                 frame.className = 'photo-frame';
@@ -288,6 +324,46 @@
             }
         }
 
+        function startAutoCapture() {
+            if (photoTimer) return;
+
+            photoCount = 0;
+            startCountdown(3); // 3초 카운트다운 시작
+        }
+
+        function startCountdown(seconds) {
+            const countdownDisplay = document.getElementById('countdown');
+            countdownDisplay.style.display = 'block';
+            countdownDisplay.innerText = seconds;
+
+            countdownTimer = setInterval(() => {
+                seconds--;
+
+                if (seconds <= 0) {
+                    clearInterval(countdownTimer);
+                    countdownDisplay.innerText = "찰칵!"; // 0일 때 "찰칵"을 표시
+                    setTimeout(() => {
+                        countdownDisplay.style.display = 'none'; // "찰칵"을 잠시 표시한 후 숨김
+                        capturePhoto();
+
+                        photoCount++;
+                        if (photoCount < maxPhotos) {
+                            startCountdown(3); // 다음 카운트다운 바로 시작
+                        } else {
+                            clearInterval(photoTimer);
+                            photoTimer = null;
+                        }
+                    }, 500); // "찰칵"을 0.5초 동안 표시
+                } else {
+                    countdownDisplay.innerText = seconds;
+                }
+            }, 1000);
+        }
+
+
+        document.querySelector('button[onclick="capturePhoto()"]').setAttribute('onclick', 'startAutoCapture()');
+
+
         function selectPhoto(photoId) {
             const photoFrame = document.getElementById(photoId);
             if (photoFrame.classList.contains('selected')) {
@@ -318,6 +394,7 @@
             });
             document.querySelector('.container').classList.add('hidden');
             document.querySelector('.container2').classList.remove('hidden');
+            document.querySelector('.filter-container').classList.remove('hidden');
         }
 
         document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -327,20 +404,109 @@
         });
 
         function applyFilter(filterType) {
+            const container2 = document.querySelector('.container2');
             const photos = document.querySelectorAll('.container2 .photo-frame');
+
             photos.forEach(photo => {
                 switch (filterType) {
                     case 'filter-none':
                         photo.style.filter = 'none';
+                        container2.style.backgroundColor = '#FFBE98';
                         break;
                     case 'filter-mono':
                         photo.style.filter = 'grayscale(100%)';
+                        container2.style.backgroundColor = 'black';
                         break;
                     case 'filter-sepia':
                         photo.style.filter = 'sepia(100%)';
+                        container2.style.backgroundColor = '#FFBE98';
+                        break;
+                    case 'filter-fuji':
+                        photo.style.filter = 'brightness(0.9) contrast(1.2) saturate(0.8) sepia(0.3) hue-rotate(-10deg)';
+                        photo.style.opacity = 0.95;
+                        photo.style.boxShadow = '1px 1px 5px #333';
+                        container2.style.backgroundColor = '#FFBE98';
                         break;
                 }
             });
+        }
+
+        async function uploadToCloud(imageBlob) {
+            const bucketName = "teaminteraction"; // Google Cloud Storage 버킷 이름
+            const fileName = `record_${new Date().getTime()}.png`;
+            const uploadUrl = `https://storage.googleapis.com/upload/storage/v1/b/${bucketName}/o?uploadType=media&name=${fileName}`;
+            
+            // 토큰이 필요하다면 gcloud CLI로 얻은 액세스 토큰을 넣어야 합니다.
+            const token = 'ya29.a0AeDClZA6TG3hamMBKjNKqoA0OA16Ubir6Xuiu5UkNfcfAlFE64fu5m6jGV082j9pB0pxCR-B-w9gBQW4skGkcpg-glG9ypmcmAxkpnguvYWfe-ZEgNNjBhvRa8HgJiQ2nJvrD-T1aY6PT5YaG0YX3CEFBcpKaB1rLRxclX_t6kUdFlgaCgYKAYASARMSFQHGX2MihFeaOggKGtEd_OTxn35nXQ0182'; // 여기에 OAuth 2.0 액세스 토큰을 입력하십시오.
+
+            const response = await fetch(uploadUrl, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "image/png"
+                },
+                body: imageBlob
+            });
+
+            if (!response.ok) {
+                console.error("Failed to upload to Google Cloud Storage", response);
+                return null;
+            }
+            const data = await response.json();
+            return `https://storage.googleapis.com/${bucketName}/${fileName}`;
+        }
+
+        async function saveAsPng() {
+            const element = document.querySelector('.container2');
+            element.style.paddingTop = '5px';
+            if (element.classList.contains('hidden')) {
+                alert('Please select photos first.');
+                return;
+            }
+
+            htmlToImage.toBlob(element)
+                .then(async function(blob) {
+                    console.log("Generated Image Blob:", blob);
+                    const imageUrl = await uploadToCloud(blob);
+                    if (imageUrl) {
+                        generateQRCode(imageUrl);
+                    } else {
+                        alert("Failed to upload image.");
+                    }
+                })
+                .catch(function(error) {
+                    console.error("Image generation failed:", error);
+                });
+        }
+
+        function generateQRCode(url) {
+            console.log("QR 코드에 사용할 URL:", url);
+            const qrCode = new QRCodeStyling({
+                width: 100,
+                height: 100,
+                data: url,
+                dotsOptions: {
+                    color: "#000000",
+                    type: "rounded"
+                },
+                backgroundOptions: {
+                    color: "#ffffff",
+                }
+            });
+
+            const qrCodeContainer = document.getElementById('qr-code-container');
+            qrCodeContainer.innerHTML = ''; // 기존 QR 코드 제거
+            qrCode.append(qrCodeContainer);
+
+            // QR 코드가 생성된 후 크기 조정
+            const canvas = qrCodeContainer.querySelector("canvas");
+            if (canvas) {
+                canvas.style.width = "100%";
+                canvas.style.height = "100%";
+                canvas.style.position = "relative";
+                canvas.style.zIndex = "10";
+            }
+            console.log("QR 코드가 성공적으로 생성되었습니다.");
         }
 
         setupWebcam();
